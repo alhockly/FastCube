@@ -1,0 +1,2 @@
+# FastCube
+XInput Unity project
