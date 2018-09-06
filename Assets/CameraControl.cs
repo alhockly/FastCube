@@ -15,7 +15,8 @@ public class CameraControl : MonoBehaviour {
     private const float Y_ANGLE_MAX=100f;
     // Use this for initialization
     void Start() {
-
+        Xangle = 28;
+        Yangle = -19;
     }
 
     public GameObject target;
@@ -28,7 +29,6 @@ public class CameraControl : MonoBehaviour {
     float y = 0;
 
     public float distance= 10f;
-
 
     void Update()
     {

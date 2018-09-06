@@ -3,6 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using XInputDotNetPure;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
 
 public class PlayerControl : MonoBehaviour {
 
@@ -19,102 +22,120 @@ public class PlayerControl : MonoBehaviour {
     public float fallMultiplier = 2.5f;
     public float lowJumpMultiplier = 2f;
     public float lastJump;
-
+    public bool living;
+    public int Score;
+    public int boostForce;
+    public bool canSpin;
     Rigidbody rb;
     public Transform camera;
+    public float spincooldowntime;
+    public bool isattacking;
+    public float attackSpinTime;
+    public bool win;
 
+    GameObject Wintext;
+    Text ScoreText;
     // Use this for initialization
     void Start () {
-        rb = GetComponent<Rigidbody>(); 
+        rb = GetComponent<Rigidbody>();
+        living = true;
+        canSpin = true;
+        Score = 0;
+        win = false;
+        Wintext = GameObject.Find("WinText");
+        Wintext.SetActive(false);
+        ScoreText = GameObject.Find("ScoreText").GetComponent<Text>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        // Find a PlayerIndex, for a single player game
-        // Will find the first controller that is connected ans use it
-        if (!playerIndexSet || !prevState.IsConnected)
-        {
-            for (int i = 0; i < 4; ++i)
+
+            // Find a PlayerIndex, for a single player game
+            // Will find the first controller that is connected ans use it
+            if (!playerIndexSet || !prevState.IsConnected)
             {
-                PlayerIndex testPlayerIndex = (PlayerIndex)i;
-                GamePadState testState = GamePad.GetState(testPlayerIndex);
-                if (testState.IsConnected)
+                for (int i = 0; i < 4; ++i)
                 {
-                    Debug.Log(string.Format("GamePad found {0}", testPlayerIndex));
-                    playerIndex = testPlayerIndex;
-                    playerIndexSet = true;
+                    PlayerIndex testPlayerIndex = (PlayerIndex)i;
+                    GamePadState testState = GamePad.GetState(testPlayerIndex);
+                    if (testState.IsConnected)
+                    {
+                        Debug.Log(string.Format("GamePad found {0}", testPlayerIndex));
+                        playerIndex = testPlayerIndex;
+                        playerIndexSet = true;
+                    }
                 }
             }
-        }
 
-        prevState = state;
-        state = GamePad.GetState(playerIndex);
-
-        
-        // Detect if a button was pressed this frame
-        if (prevState.Buttons.A == ButtonState.Released && state.Buttons.A == ButtonState.Pressed)
+            prevState = state;
+            state = GamePad.GetState(playerIndex);
+         if (!win)
         {
-            Jump();
-        }
+            ScoreText.text = Score.ToString();
+                // Detect if a button was pressed this frame
+            if (prevState.Buttons.A == ButtonState.Released && state.Buttons.A == ButtonState.Pressed)
+            {
+                Jump();
+            }
 
-        if (rb.velocity.y < 0)
-        {
-            rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+            if (prevState.Buttons.X == ButtonState.Released && state.Buttons.X == ButtonState.Pressed && canSpin)
+            {
+                StartCoroutine(attacking(attackSpinTime));
+                canSpin = false;
+                StartCoroutine(Rotate(attackSpinTime, new Vector3(0, 1, 0)));
+                StartCoroutine(spinCooldown(spincooldowntime));
 
+            }
 
-        }
-        else if (rb.velocity.y > 0 && state.Buttons.A == ButtonState.Released)
-        {
-            rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-        }
-
-
-
-        if (!ignoreSpin)
-        {
-            // Make the current object turn
-            //transform.localRotation *= Quaternion.Euler(0.0f, state.ThumbSticks.Left.X * 25.0f * Time.deltaTime * TurnSpeed, 0.0f);
-        }
-
-        //transform.position += transform.forward * Time.deltaTime * state.ThumbSticks.Left.Y*MoveSpeed;
-        Vector3 camF = camera.forward;
-        Vector3 camR = camera.right;
-        camF.y = 0;
-        camR.y = 0;
-        camF = camF.normalized;
-        camR = camR.normalized;
-   
-        transform.position += (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
-        /*
-        Vector3 newpos = (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
-
-        float distTemp = Vector3.Distance(newpos, transform.position);
-        if (distTemp < lastJump) {
-            lastJump = distTemp;
-            //closer
-            transform.position += newpos * Time.deltaTime * (MoveSpeed / 2);
-
-        }
-        else if (distTemp > lastJump) {
-            lastJump = distTemp;
-            //further
-            transform.position += newpos * Time.deltaTime * MoveSpeed / 2;
-        }
-        */
+            if (rb.velocity.y < 0)
+            {
+                rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
 
 
-        /*
-        if (Canjump)
-        {
-            MoveSpeed = 40;
+            }
+            else if (rb.velocity.y > 0 && state.Buttons.A == ButtonState.Released)
+            {
+                rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+            }
+
+            if (!living)
+            {
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            }
+
+
+
+            //transform.position += transform.forward * Time.deltaTime * state.ThumbSticks.Left.Y*MoveSpeed;
+            Vector3 camF = camera.forward;
+            Vector3 camR = camera.right;
+            camF.y = 0;
+            camR.y = 0;
+            camF = camF.normalized;
+            camR = camR.normalized;
+            transform.position += (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
         }
         else {
-            MoveSpeed = 5;
+            ///YOU WIN!
+            Wintext.SetActive(true);
+            
+            Time.timeScale = 0.5f;
+
+            Vector3 camF = camera.forward;
+            Vector3 camR = camera.right;
+            camF.y = 0;
+            camR.y = 0;
+            camF = camF.normalized;
+            camR = camR.normalized;
+            transform.position += (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
+
         }
-        */
+       
     }
 
+    public int GetPlayerScore() {
+        return Score;
+        }
 
 
     void OnCollisionEnter(Collision collision)
@@ -123,6 +144,36 @@ public class PlayerControl : MonoBehaviour {
             Canjump = true;
             
         }
+
+        if (collision.gameObject.tag == "death") {
+            
+                living = false;
+         
+            
+        }
+
+        if (collision.gameObject.tag == "enemy")
+        {
+            if (!isattacking)
+            {
+                living = false;
+            }
+            else
+            {
+                Destroy(collision.gameObject);
+                Score++;
+            }
+
+        }
+
+
+        if (collision.gameObject.tag == "collectable") {
+            Destroy(collision.gameObject);
+            Score++;
+
+        }
+        
+
     }
 
     void OnCollisionExit(Collision collision) {
@@ -142,13 +193,13 @@ public class PlayerControl : MonoBehaviour {
         }
         else {
             Debug.Log("rotatin");
-            StartCoroutine(Rotate(0.5f));
+            StartCoroutine(Rotate(0.5f,new Vector3(0,0,1)));
         }
         
 
     }
 
-    IEnumerator Rotate(float duration)
+    IEnumerator Rotate(float duration,Vector3 dir)
     {
         ignoreSpin = true;
         Quaternion startRot = transform.rotation;
@@ -156,10 +207,24 @@ public class PlayerControl : MonoBehaviour {
         while (t < duration)
         {
             t += Time.deltaTime;
-            transform.rotation = startRot * Quaternion.AngleAxis(t / duration * 360f, transform.right); //or transform.right if you want it to be locally based
+            transform.rotation = startRot * Quaternion.AngleAxis(t / duration * 360f, dir); //or transform.right if you want it to be locally based
             yield return null;
         }
-        transform.rotation = startRot;
+        transform.rotation = Quaternion.identity;
         ignoreSpin = false;
     }
+
+
+    IEnumerator attacking(float duration)
+    {
+        isattacking = true;
+        yield return new WaitForSecondsRealtime(duration);
+        isattacking = false;
+    }
+    IEnumerator spinCooldown(float duration)
+    {
+        yield return new WaitForSecondsRealtime(duration);
+        canSpin = true;
+    }
+
 }

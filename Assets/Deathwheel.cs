@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Deathwheel : MonoBehaviour {
 
+    public int turnspeed;
+
 	// Use this for initialization
 	void Start () {
 		
@@ -11,6 +13,8 @@ public class Deathwheel : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+
+        transform.Rotate(new Vector3(0, 0, 1) * Time.deltaTime*turnspeed);
 		
 	}
 }

@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - standable
+  - death
+  - collectable
+  - enemy
   layers:
   - Default
   - TransparentFX
