@@ -34,6 +34,7 @@ public class PlayerControl : MonoBehaviour {
     public bool win;
     public bool paused;
 
+
     public AudioSource audioSource;
     public AudioClip Jumpsound;
     public AudioClip Pickupsound;
@@ -43,6 +44,7 @@ public class PlayerControl : MonoBehaviour {
     GameObject Wintext;
     Text ScoreText;
     GameObject pausemenu;
+    Renderer playerRenderer;
     // Use this for initialization
     void Start () {
         rb = GetComponent<Rigidbody>();
@@ -55,6 +57,7 @@ public class PlayerControl : MonoBehaviour {
         ScoreText = GameObject.Find("ScoreText").GetComponent<Text>();
         pausemenu = GameObject.Find("PauseMenu");
         audioSource = GetComponent<AudioSource>();
+        playerRenderer = GetComponent<Renderer>();
         
     }
 
@@ -281,9 +284,17 @@ public class PlayerControl : MonoBehaviour {
         yield return new WaitForSecondsRealtime(duration);
         isattacking = false;
     }
+
     IEnumerator spinCooldown(float duration)
     {
-        yield return new WaitForSecondsRealtime(duration);
+        float t = 0f;                       
+        while (t < duration) {
+            t += Time.deltaTime;
+            playerRenderer.material.color = Color.HSVToRGB(0.1f, t / duration, 0.95f);
+            Debug.Log(t / duration);
+            yield return null;              //makes sure there is only one while iteration per frame
+        }
+        //playerRenderer.material.color = Color.HSVToRGB(33/360,94,95);
         canSpin = true;
     }
 
