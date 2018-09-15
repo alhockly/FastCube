@@ -32,9 +32,17 @@ public class PlayerControl : MonoBehaviour {
     public bool isattacking;
     public float attackSpinTime;
     public bool win;
+    public bool paused;
+
+    public AudioSource audioSource;
+    public AudioClip Jumpsound;
+    public AudioClip Pickupsound;
+    public AudioClip Spinsound;
+    public AudioClip Deathsound;
 
     GameObject Wintext;
     Text ScoreText;
+    GameObject pausemenu;
     // Use this for initialization
     void Start () {
         rb = GetComponent<Rigidbody>();
@@ -45,6 +53,9 @@ public class PlayerControl : MonoBehaviour {
         Wintext = GameObject.Find("WinText");
         Wintext.SetActive(false);
         ScoreText = GameObject.Find("ScoreText").GetComponent<Text>();
+        pausemenu = GameObject.Find("PauseMenu");
+        audioSource = GetComponent<AudioSource>();
+        
     }
 
     // Update is called once per frame
@@ -70,50 +81,82 @@ public class PlayerControl : MonoBehaviour {
 
             prevState = state;
             state = GamePad.GetState(playerIndex);
-         if (!win)
+         if (!win)                                              
         {
             ScoreText.text = Score.ToString();
+
+            if (!paused)
+            {
+                Time.timeScale = 1f;
+                pausemenu.SetActive(false);
                 // Detect if a button was pressed this frame
-            if (prevState.Buttons.A == ButtonState.Released && state.Buttons.A == ButtonState.Pressed)
-            {
-                Jump();
+                if (prevState.Buttons.A == ButtonState.Released && state.Buttons.A == ButtonState.Pressed)
+                {
+                    Jump();
+                }
+
+                if (prevState.Buttons.X == ButtonState.Released && state.Buttons.X == ButtonState.Pressed && canSpin)
+                {
+                    audioSource.clip = Spinsound;
+                    audioSource.Play();
+                    StartCoroutine(attacking(attackSpinTime));
+                    canSpin = false;
+                    StartCoroutine(Rotate(attackSpinTime, new Vector3(0, 1, 0)));
+                    StartCoroutine(spinCooldown(spincooldowntime));
+
+                }
+
+                if (prevState.Buttons.Start == ButtonState.Released && state.Buttons.Start == ButtonState.Pressed)
+                {
+
+                    paused = true;
+                }
+
+                if (rb.velocity.y < 0)
+                {
+                    rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+
+
+                }
+                else if (rb.velocity.y > 0 && state.Buttons.A == ButtonState.Released)
+                {
+                    rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+                }
+
+                if (!living)
+                {
+                    audioSource.clip = Deathsound;
+                    audioSource.Play();
+                    SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                    
+                }
+
+
+
+                //transform.position += transform.forward * Time.deltaTime * state.ThumbSticks.Left.Y*MoveSpeed;
+                Vector3 camF = camera.forward;
+                Vector3 camR = camera.right;
+                camF.y = 0;
+                camR.y = 0;
+                camF = camF.normalized;
+                camR = camR.normalized;
+                transform.position += (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
+
+            }
+            else {              //not won and paused
+                Time.timeScale = 0;
+                if (prevState.Buttons.Start == ButtonState.Released && state.Buttons.Start == ButtonState.Pressed)
+                {
+
+                    paused = false;
+                }
+
+                pausemenu.SetActive(true);
+
+
+
             }
 
-            if (prevState.Buttons.X == ButtonState.Released && state.Buttons.X == ButtonState.Pressed && canSpin)
-            {
-                StartCoroutine(attacking(attackSpinTime));
-                canSpin = false;
-                StartCoroutine(Rotate(attackSpinTime, new Vector3(0, 1, 0)));
-                StartCoroutine(spinCooldown(spincooldowntime));
-
-            }
-
-            if (rb.velocity.y < 0)
-            {
-                rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-
-
-            }
-            else if (rb.velocity.y > 0 && state.Buttons.A == ButtonState.Released)
-            {
-                rb.velocity += Vector3.up * Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-            }
-
-            if (!living)
-            {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-            }
-
-
-
-            //transform.position += transform.forward * Time.deltaTime * state.ThumbSticks.Left.Y*MoveSpeed;
-            Vector3 camF = camera.forward;
-            Vector3 camR = camera.right;
-            camF.y = 0;
-            camR.y = 0;
-            camF = camF.normalized;
-            camR = camR.normalized;
-            transform.position += (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
         }
         else {
             ///YOU WIN!
@@ -129,14 +172,27 @@ public class PlayerControl : MonoBehaviour {
             camR = camR.normalized;
             transform.position += (camF * state.ThumbSticks.Left.Y + camR * state.ThumbSticks.Left.X) * Time.deltaTime * MoveSpeed;
 
+            if (prevState.Buttons.Start == ButtonState.Released && state.Buttons.Start == ButtonState.Pressed)
+            {
+
+                LoadnextLevel();
+            }
+
         }
        
+         
     }
 
     public int GetPlayerScore() {
         return Score;
         }
 
+    void LoadnextLevel() {
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+
+    }
 
     void OnCollisionEnter(Collision collision)
     {
@@ -170,6 +226,8 @@ public class PlayerControl : MonoBehaviour {
         if (collision.gameObject.tag == "collectable") {
             Destroy(collision.gameObject);
             Score++;
+            audioSource.clip = Pickupsound;
+            audioSource.Play();
 
         }
         
@@ -190,6 +248,8 @@ public class PlayerControl : MonoBehaviour {
         {
             
             GetComponent<Rigidbody>().AddForce(new Vector3(0, jumpPower, 0), ForceMode.Impulse);
+            audioSource.clip = Jumpsound;
+            audioSource.Play();
         }
         else {
             Debug.Log("rotatin");

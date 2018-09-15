@@ -14,7 +14,8 @@ public class EnemyScript : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
       
-        if(Vector3.Distance(player.transform.position, transform.position) < range) {
+        
+        if(Vector3.Distance(player.transform.position, transform.position) < range && !player.GetComponent<PlayerControl>().paused) {
             print("player in range");
 
             transform.position = Vector3.MoveTowards(transform.position, player.transform.position, moveSpeed*Time.deltaTime);

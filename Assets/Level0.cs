@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Level0 : MonoBehaviour {
     GameObject player;
-    int winscore = 3;
+    int winscore = 4;
 
 	// Use this for initialization
 	void Start () {
