@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Level0 : MonoBehaviour {
     GameObject player;
-    int winscore = 4;
+    int numstages = 2;
 
 	// Use this for initialization
 	void Start () {
@@ -15,8 +15,8 @@ public class Level0 : MonoBehaviour {
 	void Update () {
 
         PlayerControl playercontrol = player.GetComponent<PlayerControl>();
-
-        if (playercontrol.Score ==winscore) {
+        Debug.Log("cout" + playercontrol.completedStages.Count);
+        if (playercontrol.completedStages.Count==numstages) {
             playercontrol.win = true;
         }
 	}

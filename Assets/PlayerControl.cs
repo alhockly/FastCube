@@ -15,7 +15,7 @@ public class PlayerControl : MonoBehaviour {
     GamePadState prevState;
     public float TurnSpeed;
     public float MoveSpeed;
-    public bool Canjump;
+    bool Canjump;
     public float jumpPower;
     int i = 0;
     public bool ignoreSpin = false;
@@ -24,7 +24,7 @@ public class PlayerControl : MonoBehaviour {
     public float lastJump;
     public bool living;
     public int Score;
-    public int boostForce;
+    
     public bool canSpin;
     Rigidbody rb;
     public Transform camera;
@@ -33,6 +33,8 @@ public class PlayerControl : MonoBehaviour {
     public float attackSpinTime;
     public bool win;
     public bool paused;
+    public String course;
+    public List<string> completedStages;
 
 
     public AudioSource audioSource;
@@ -58,6 +60,8 @@ public class PlayerControl : MonoBehaviour {
         pausemenu = GameObject.Find("PauseMenu");
         audioSource = GetComponent<AudioSource>();
         playerRenderer = GetComponent<Renderer>();
+        completedStages = new List<string>();
+        course = "";
         
     }
 
@@ -197,8 +201,22 @@ public class PlayerControl : MonoBehaviour {
 
     }
 
-    void OnCollisionEnter(Collision collision)
+
+    public void stageCompleteFeeback() {
+
+        //flash score
+        StartCoroutine(ScoretoOrange(0.3f));
+
+        Score = 0;
+        
+
+    }
+
+
+        void OnCollisionEnter(Collision collision)
     {
+       
+
         if (collision.gameObject.tag == "standable") {
             Canjump = true;
             
@@ -226,13 +244,7 @@ public class PlayerControl : MonoBehaviour {
         }
 
 
-        if (collision.gameObject.tag == "collectable") {
-            Destroy(collision.gameObject);
-            Score++;
-            audioSource.clip = Pickupsound;
-            audioSource.Play();
-
-        }
+      
         
 
     }
@@ -244,6 +256,15 @@ public class PlayerControl : MonoBehaviour {
 
     }
 
+    public void Pickup(GameObject item) {
+
+        Destroy(item.gameObject);
+        Score++;
+        audioSource.clip = Pickupsound;
+        audioSource.Play();
+
+
+    }
 
     void Jump() {
 
@@ -254,12 +275,20 @@ public class PlayerControl : MonoBehaviour {
             audioSource.clip = Jumpsound;
             audioSource.Play();
         }
-        else {
-            Debug.Log("rotatin");
-            StartCoroutine(Rotate(0.5f,new Vector3(0,0,1)));
-        }
+        
         
 
+    }
+
+    IEnumerator ScoretoOrange(float duration) {
+        float t = 0.0f;
+        while (t < duration)
+        {
+            t += Time.deltaTime;
+            ScoreText.color = Color.HSVToRGB(0.09f, 1f, t / duration);
+            yield return null;
+        }
+        ScoreText.color = Color.HSVToRGB(0.3f, 1f, 0f);
     }
 
     IEnumerator Rotate(float duration,Vector3 dir)
@@ -291,7 +320,7 @@ public class PlayerControl : MonoBehaviour {
         while (t < duration) {
             t += Time.deltaTime;
             playerRenderer.material.color = Color.HSVToRGB(0.1f, t / duration, 0.95f);
-            Debug.Log(t / duration);
+            //Debug.Log(t / duration);
             yield return null;              //makes sure there is only one while iteration per frame
         }
         //playerRenderer.material.color = Color.HSVToRGB(33/360,94,95);

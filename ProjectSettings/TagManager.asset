@@ -8,6 +8,7 @@ TagManager:
   - death
   - collectable
   - enemy
+  - Gate
   layers:
   - Default
   - TransparentFX
